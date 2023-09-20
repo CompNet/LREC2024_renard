@@ -26,10 +26,12 @@ ex.captured_out_filter = apply_backspaces_and_linefeeds  # type: ignore
 def config():
     batch_size: int
     bert_checkpoint: str = "bert-base-cased"
+    lr: float = 2e-5
+    epochs_nb: int = 3
 
 
 @ex.automain
-def main(_run: Run, batch_size: int, bert_checkpoint: str):
+def main(_run: Run, batch_size: int, bert_checkpoint: str, lr: float, epochs_nb: int):
     tokenizer = BertTokenizerFast.from_pretrained(bert_checkpoint)
 
     # load dataset
@@ -64,10 +66,9 @@ def main(_run: Run, batch_size: int, bert_checkpoint: str):
 
     train_args = TrainingArguments(
         f"model-ner",
-        learning_rate=2e-5,
+        learning_rate=lr,
         per_device_train_batch_size=batch_size,
-        # num_train_epochs=3,
-        num_train_epochs=1,
+        num_train_epochs=epochs_nb,
     )
 
     data_collator = DataCollatorForTokenClassification(tokenizer)
