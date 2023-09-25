@@ -46,7 +46,7 @@ def main(
     epochs_nb: int,
 ):
 
-    tokenizer = BertTokenizerFast.from_pretrained("bert-base=cased")
+    tokenizer = BertTokenizerFast.from_pretrained("bert-base-cased")
 
     dataset = load_litbank_dataset(litbank_path, tokenizer, max_span_size)
     train_dataset, test_dataset = dataset.splitted(0.9)
@@ -59,6 +59,8 @@ def main(
         segment_size=segment_size,
     )
 
+    # Training
+    # --------
     model = train_coref_model(
         model,
         train_dataset,
@@ -90,6 +92,8 @@ def main(
         )
         preds.append(pred)
 
+    # Scoring
+    # -------
     metrics = score_coref_predictions(preds, test_dataset.documents)
 
     for metric_name, metric_dict in metrics.items():
