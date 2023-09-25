@@ -8,4 +8,4 @@ if [[ ! -d './litbank' ]]; then
     popd
 fi
 
-python xp_coref.py with litbank_path='./litbank'
+python xp_coref.py --file_storage='./runs_coref' with litbank_path='./litbank'
