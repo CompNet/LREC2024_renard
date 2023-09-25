@@ -53,10 +53,6 @@ def main(_run: Run, PDNC_path: str):
 
         PDNC.append(PDNCBook(d.name, text, book_characters))
 
-    # TODO: dev
-    # keep only the shortest book, for performance reasons
-    PDNC = [min(PDNC, key=lambda b: len(b.text))]
-
     # Inference
     # ---------
     pipeline = Pipeline(
