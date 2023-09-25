@@ -8,6 +8,7 @@ from sacred.run import Run
 from sacred.utils import apply_backspaces_and_linefeeds
 from rich import print
 from renard.pipeline import Pipeline
+from renard.pipeline.corefs import BertCoreferenceResolver
 from renard.pipeline.tokenization import NLTKTokenizer
 from renard.pipeline.ner import BertNamedEntityRecognizer
 from renard.pipeline.characters_extraction import GraphRulesCharactersExtractor
@@ -28,10 +29,11 @@ class PDNCBook:
 @ex.config
 def config():
     PDNC_path: str
+    use_coref: bool = False
 
 
 @ex.automain
-def main(_run: Run, PDNC_path: str):
+def main(_run: Run, PDNC_path: str, use_coref: bool):
 
     # Load PDNC dataset
     # -----------------
@@ -55,14 +57,16 @@ def main(_run: Run, PDNC_path: str):
 
     # Inference
     # ---------
-    pipeline = Pipeline(
-        # NOTE: we have to perform at least tokenization and NER as
-        # inputs to characters extraction
-        [NLTKTokenizer(), BertNamedEntityRecognizer(), GraphRulesCharactersExtractor()]
-    )
+    steps = [NLTKTokenizer(), BertNamedEntityRecognizer()]
+    if use_coref:
+        steps.append(BertCoreferenceResolver())
+    steps.append(GraphRulesCharactersExtractor())
+    pipeline = Pipeline(steps)
+
     predicted_characters = []
     for book in PDNC:
         out = pipeline(book.text)
+        assert not out.characters is None
         predicted_characters.append([char.names for char in out.characters])
 
     # Scoring

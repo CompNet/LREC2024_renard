@@ -13,4 +13,14 @@ if [[ ! -d "$PDNC_PATH" ]]; then
     popd
 fi
 
-python xp_characters_extraction.py with PDNC_path="$PDNC_PATH"
+python xp_characters_extraction.py\
+       --file_storage='./runs_characters_extraction'\
+       with\
+       PDNC_path="$PDNC_PATH"\
+       use_coref=False
+
+python xp_characters_extraction.py
+       --file_storage='./runs_characters_extraction'\
+       with\
+       PDNC_path="$PDNC_PATH"\
+       use_coref=True
