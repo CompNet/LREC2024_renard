@@ -15,7 +15,7 @@ from more_itertools import flatten
 from rich import print
 from renard.pipeline.core import Pipeline
 from renard.pipeline.ner import BertNamedEntityRecognizer
-from ner import tokenize_and_align_labels
+from renard_lrec2024.ner import tokenize_and_align_labels
 
 
 ex = Experiment()

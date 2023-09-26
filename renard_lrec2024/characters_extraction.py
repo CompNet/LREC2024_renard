@@ -5,7 +5,7 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import maximum_bipartite_matching
 from renard.pipeline import PipelineStep
 from renard.pipeline.ner import NEREntity
-from utils import find_pattern
+from renard_lrec2024.utils import find_pattern
 
 
 class PDNCPerfectNamedEntityRecognizer(PipelineStep):

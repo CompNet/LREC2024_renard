@@ -7,11 +7,12 @@ from sacred import Experiment
 from sacred.run import Run
 from sacred.utils import apply_backspaces_and_linefeeds
 from rich import print
+from tqdm import tqdm
 from renard.pipeline import Pipeline
 from renard.pipeline.corefs import BertCoreferenceResolver
 from renard.pipeline.tokenization import NLTKTokenizer
 from renard.pipeline.characters_extraction import GraphRulesCharactersExtractor
-from characters_extraction import (
+from renard_lrec2024.characters_extraction import (
     score_characters_extraction,
     PDNCPerfectNamedEntityRecognizer,
 )
@@ -69,10 +70,10 @@ def main(_run: Run, PDNC_path: str, use_coref: bool):
     if use_coref:
         steps.append(BertCoreferenceResolver())
     steps.append(GraphRulesCharactersExtractor(link_corefs_mentions=False))
-    pipeline = Pipeline(steps)
+    pipeline = Pipeline(steps, warn=False, progress_report=None)
 
     predicted_characters = []
-    for book in PDNC:
+    for book in tqdm(PDNC):
         # NOTE: pass in refs at run time for PDNCPerfectNamedEntityRecognizer
         out = pipeline(book.text, refs=book.characters)
         assert not out.characters is None
