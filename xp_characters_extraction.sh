@@ -1,12 +1,9 @@
 #!/bin/bash
 
-PDNC_PATH="./project-dialogism-novel-corpus"
-if [[ ! -z "$1" ]];then
-    PDNC_PATH="$1"
-fi
+PDNC_PATH="{$1:-./project-dialogism-novel-corpus}"
 
 if [[ ! -d "$PDNC_PATH" ]]; then
-    git clone https://github.com/Priya22/project-dialogism-novel-corpus.git
+    git clone https://github.com/Priya22/project-dialogism-novel-corpus.git "$PDNC_PATH"
     pushd "$PDNC_PATH"
     # checkout a specific commit for reproducibility
     git checkout 'b670b9a'
