@@ -49,7 +49,7 @@ def main(
     tokenizer = BertTokenizerFast.from_pretrained("bert-base-cased")
 
     dataset = load_litbank_dataset(litbank_path, tokenizer, max_span_size)
-    train_dataset, test_dataset = dataset.splitted(0.9)
+    train_dataset, test_dataset = dataset.splitted(0.8)
     train_dataset.limit_doc_size_(sents_per_documents_train)
 
     model = BertForCoreferenceResolution.from_pretrained(
@@ -87,7 +87,7 @@ def main(
                     Mention(mention.tokens, mention.start_idx, mention.end_idx)
                     for mention in chain
                 ]
-                for chain in out.coref_chains
+                for chain in out.corefs
             ],
         )
         preds.append(pred)
