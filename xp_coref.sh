@@ -10,4 +10,8 @@ if [[ ! -d "$LITBANK_PATH" ]]; then
     popd
 fi
 
-python xp_coref.py --file_storage='./runs_coref' with litbank_path="$LITBANK_PATH"
+python xp_coref.py\
+       --file_storage='./runs_coref'\
+       seed=0\
+       with\
+       litbank_path="$LITBANK_PATH"
