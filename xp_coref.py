@@ -70,6 +70,7 @@ def main(
         epochs_nb=epochs_nb,
         bert_lr=bert_lr,
         task_lr=task_lr,
+        _run=_run,
     )
 
     # Inference
