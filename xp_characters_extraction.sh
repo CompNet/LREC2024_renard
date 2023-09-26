@@ -17,7 +17,7 @@ python xp_characters_extraction.py\
        PDNC_path="$PDNC_PATH"\
        use_coref=False
 
-python xp_characters_extraction.py
+python xp_characters_extraction.py\
        --file_storage='./runs_characters_extraction'\
        with\
        seed=0\
