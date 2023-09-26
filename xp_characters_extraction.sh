@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PDNC_PATH="{$1:-./project-dialogism-novel-corpus}"
+PDNC_PATH="${1:-./project-dialogism-novel-corpus}"
 
 if [[ ! -d "$PDNC_PATH" ]]; then
     git clone https://github.com/Priya22/project-dialogism-novel-corpus.git "$PDNC_PATH"
