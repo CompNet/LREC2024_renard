@@ -10,9 +10,11 @@ from rich import print
 from renard.pipeline import Pipeline
 from renard.pipeline.corefs import BertCoreferenceResolver
 from renard.pipeline.tokenization import NLTKTokenizer
-from renard.pipeline.ner import BertNamedEntityRecognizer
 from renard.pipeline.characters_extraction import GraphRulesCharactersExtractor
-from characters_extraction import score_characters_extraction
+from characters_extraction import (
+    score_characters_extraction,
+    PDNCPerfectNamedEntityRecognizer,
+)
 
 
 ex = Experiment()
@@ -48,6 +50,8 @@ def main(_run: Run, PDNC_path: str, use_coref: bool):
         characters_infos = pd.read_csv(d / "character_info.csv")
         book_characters = []
         for _, row in characters_infos.iterrows():
+            if row["Main Name"] in ("_group", "_unknowable"):
+                continue
             book_characters.append({row["Main Name"], *eval(row["Aliases"])})
 
         with open(d / "novel_text.txt") as f:
@@ -57,17 +61,37 @@ def main(_run: Run, PDNC_path: str, use_coref: bool):
 
     # Inference
     # ---------
-    steps = [NLTKTokenizer(), BertNamedEntityRecognizer()]
+    # the PDNC dataset only annotates speaker: therefore, we cant use
+    # a named entity recognizer to extract entities since that would
+    # extract extra unannotated characters. Instead, we consider all
+    # mentions of given characters, simulating perfect NER.
+    steps = [NLTKTokenizer(), PDNCPerfectNamedEntityRecognizer()]
     if use_coref:
         steps.append(BertCoreferenceResolver())
-    steps.append(GraphRulesCharactersExtractor())
+    steps.append(GraphRulesCharactersExtractor(link_corefs_mentions=False))
     pipeline = Pipeline(steps)
 
     predicted_characters = []
     for book in PDNC:
-        out = pipeline(book.text)
+        # NOTE: pass in refs at run time for PDNCPerfectNamedEntityRecognizer
+        out = pipeline(book.text, refs=book.characters)
         assert not out.characters is None
-        predicted_characters.append([char.names for char in out.characters])
+
+        # extract predictions
+        preds = [set(char.names) for char in out.characters]
+        predicted_characters.append(preds)
+
+        # restrict labels to characters found in the text, since some
+        # of them aren't present.
+        all_extracted_names = {" ".join(entity.tokens) for entity in out.entities}
+        # 1. remove names not extracted by PDNCPerfectNamedEntityRecognizer
+        book.characters = [
+            {name for name in names if name in all_extracted_names}
+            for names in book.characters
+        ]
+        # 2. the previous operation might have left some empty name
+        #    sets: delete them
+        book.characters = [names for names in book.characters if not len(names) == 0]
 
     # Scoring
     # -------

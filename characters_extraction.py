@@ -1,7 +1,41 @@
 from typing import List, Set
+from more_itertools import flatten
 import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import maximum_bipartite_matching
+from renard.pipeline import PipelineStep
+from renard.pipeline.ner import NEREntity
+from utils import find_pattern
+
+
+class PDNCPerfectNamedEntityRecognizer(PipelineStep):
+    """
+    Simulate a NER model that only extract mentions from the
+    characters included in ``refs``.
+    """
+
+    def __call__(self, tokens: List[str], refs: List[Set[str]], **kwargs) -> dict:
+
+        entities = []
+
+        for name in flatten(refs):
+
+            coords_list = find_pattern(tokens, name.split(" "))
+
+            for coords in coords_list:
+                entities.append(
+                    NEREntity(
+                        tokens[coords[0] : coords[1]], coords[0], coords[1], "PER"
+                    )
+                )
+
+        return {"entities": entities}
+
+    def needs(self):
+        return {"tokens", "refs"}
+
+    def production(self):
+        return {"entities"}
 
 
 def score_characters_extraction(refs: List[Set[str]], preds: List[Set[str]]) -> dict:
