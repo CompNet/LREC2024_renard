@@ -1,3 +1,4 @@
+from typing import Optional
 from transformers import BertTokenizerFast
 from sacred import Experiment
 from sacred.run import Run
@@ -25,7 +26,8 @@ def config():
     max_span_size: int = 10
     mentions_per_tokens: float = 0.4
     segment_size: int = 128
-    sents_per_documents_train: int = 11
+    sents_per_documents_train: int = 10
+    sents_per_documents_test = None
     batch_size: int = 1
     epochs_nb: int = 30
     bert_lr: float = 1e-5
@@ -40,6 +42,7 @@ def main(
     mentions_per_tokens: float,
     segment_size: int,
     sents_per_documents_train: int,
+    sents_per_documents_test: Optional[int],
     bert_lr: float,
     task_lr: float,
     batch_size: int,
@@ -51,6 +54,8 @@ def main(
     dataset = load_litbank_dataset(litbank_path, tokenizer, max_span_size)
     train_dataset, test_dataset = dataset.splitted(0.8)
     train_dataset.limit_doc_size_(sents_per_documents_train)
+    if not sents_per_documents_test is None:
+        test_dataset.limit_doc_size_(sents_per_documents_test)
 
     model = BertForCoreferenceResolution.from_pretrained(
         "bert-base-cased",
