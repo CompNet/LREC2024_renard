@@ -57,7 +57,7 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
     # Comparison
     # ----------
     archive_graph(_run, out, "thg")
-    archive_graph(_run, out, "thg_gold")
+    archive_graph(_run, gold_out, "thg_gold")
 
     nodes_metrics = score_characters_extraction(
         [character.names for character in gold_out.characters],
