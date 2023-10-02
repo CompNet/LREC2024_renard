@@ -1,6 +1,7 @@
 from typing import List, Tuple
 import os, pickle
 from sacred.run import Run
+import matplotlib.pyplot as plt
 from renard.pipeline.core import PipelineState
 
 
@@ -19,7 +20,10 @@ def find_pattern(lst: list, pattern: list) -> List[Tuple[int, int]]:
 def archive_graph(_run: Run, state: PipelineState, graph_name: str):
     # PNG export
     png_path = f"{graph_name}.png"
-    state.plot_graph_to_file(png_path)
+    fig = plt.gcf()
+    fig.set_size_inches(24, 24)
+    fig.set_dpi(300)
+    state.plot_graph_to_file(png_path, fig=fig)
     _run.add_artifact(png_path)
     os.remove(png_path)
 
