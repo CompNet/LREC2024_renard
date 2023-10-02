@@ -17,6 +17,14 @@ def find_pattern(lst: list, pattern: list) -> List[Tuple[int, int]]:
     return coords
 
 
+def archive_pipeline_state(_run: Run, state: PipelineState, name: str):
+    pickle_path = f"{name}.pickle"
+    with open(pickle_path, "wb") as f:
+        pickle.dump(state, f)
+    _run.add_artifact(pickle_path)
+    os.remove(pickle_path)
+
+
 def archive_graph(_run: Run, state: PipelineState, graph_name: str):
     # PNG export
     png_path = f"{graph_name}.png"

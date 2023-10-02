@@ -14,7 +14,7 @@ from renard_lrec2024.network_extraction import (
     get_thg_characters,
     align_characters,
 )
-from renard_lrec2024.utils import archive_graph
+from renard_lrec2024.utils import archive_graph, archive_pipeline_state
 
 
 ex = Experiment()
@@ -44,6 +44,7 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
     )
 
     out = pipeline(tokens=tokens, sentences=sentences)
+    archive_pipeline_state(_run, out, "pipeline_state")
 
     # Gold pipeline using annotations
     # -------------------------------
