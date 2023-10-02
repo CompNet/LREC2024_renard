@@ -117,16 +117,36 @@ THG_CHARACTERS_NAMES = [
 
 
 def get_thg_characters(tokens: List[str]) -> Set[Character]:
+
     characters = set()
 
     for names in THG_CHARACTERS_NAMES:
-        mentions = []
 
-        for name in names:
+        mentions = []
+        visited_mention_coords = []
+
+        # we start by the longest names. We pick the largest patterns,
+        # and then prevents the smallest one from overlapping.
+        for name in reversed(sorted(names, key=len)):
+
+            print(name)
+
             splitted = name.split(" ")
             mention_coords = find_pattern(tokens, splitted)
+
             for start, end in mention_coords:
+
+                # check if the mention is overlapping with an already
+                # visited one
+                if any(
+                    (start >= o_start and start <= o_end)
+                    or (end >= o_start and end <= o_end)
+                    for o_start, o_end in visited_mention_coords
+                ):
+                    continue
+
                 mentions.append(Mention(tokens[start:end], start, end))
+                visited_mention_coords.append((start, end))
 
         characters.add(Character(names, mentions))
 
@@ -176,10 +196,13 @@ def load_thg_bio(path: str) -> Tuple[List[str], List[List[str]], List[str]]:
 def align_characters(
     refs: List[Character], preds: List[Character]
 ) -> Dict[Character, Optional[Character]]:
-    """Try to best align a set of predicted characters to a list of reference characters."""
+    """Try to best align a set of predicted characters to a list of reference characters.
+
+    :return: a dict with keys from ``refs`` and values from ``preds``. Values can be ``None``.
+    """
     similarity = np.zeros((len(refs), len(preds)))
     for r_i, ref_character in enumerate(refs):
-        for p_i, pred_character in enumerate(refs):
+        for p_i, pred_character in enumerate(preds):
             intersection = ref_character.names.intersection(pred_character.names)
             union = ref_character.names.union(pred_character.names)
             similarity[r_i][p_i] = len(intersection) / len(union)

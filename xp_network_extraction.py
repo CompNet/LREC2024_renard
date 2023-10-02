@@ -31,8 +31,6 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
     tokens, sentences, gold_bio_tags = load_thg_bio(
         f"./data/network_extraction/TheHungerGames_annotated_no_extended_per_quotesfixed_chaptersfixed.conll"
     )
-    gold_entities = ner_entities(tokens, gold_bio_tags)
-    gold_characters = get_thg_characters(tokens)
 
     # Full extraction pipeline (not using annotations)
     # ------------------------------------------------
@@ -49,14 +47,12 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
 
     # Gold pipeline using annotations
     # -------------------------------
-    gold_pipeline = Pipeline(
-        [
-            GraphRulesCharactersExtractor(),
-            CoOccurrencesGraphExtractor(co_occurrences_dist),
-        ]
-    )
+    gold_pipeline = Pipeline([CoOccurrencesGraphExtractor(co_occurrences_dist)])
 
-    gold_out = gold_pipeline(tokens=tokens, sentences=sentences, entities=gold_entities)
+    gold_characters = get_thg_characters(tokens)
+    gold_out = gold_pipeline(
+        tokens=tokens, sentences=sentences, characters=gold_characters
+    )
 
     # Comparison
     # ----------
@@ -68,6 +64,8 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
         [character.names for character in out.characters],
     )
     print(f"nodes metrics: {nodes_metrics}")
+    for k, v in nodes_metrics.items():
+        _run.log_scalar(f"nodes_{k}", v)
 
     # edge recall
     characters_mapping = align_characters(gold_out.characters, out.characters)
@@ -80,17 +78,25 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
         else:
             recall_list.append(0)
     recall = sum(recall_list) / len(recall_list)
+    _run.log_scalar("edge_recall", recall)
     print(f"edges recall: {recall}")
 
     # edge precision
     precision_list = []
-    r_characters_mapping = {v: k for k, v in characters_mapping.items()}
+    r_characters_mapping = {
+        v: k for k, v in characters_mapping.items() if not v is None
+    }
     for c1, c2 in out.characters_graph.edges:
-        r1 = r_characters_mapping[c1]
-        r2 = r_characters_mapping[c2]
+        r1 = r_characters_mapping.get(c1)
+        r2 = r_characters_mapping.get(c2)
         if (r1, r2) in gold_out.characters_graph.edges:
             precision_list.append(1)
         else:
             precision_list.append(0)
     precision = sum(precision_list) / len(precision_list)
+    _run.log_scalar("edges_precision", precision)
     print(f"edges precision: {precision}")
+
+    f1 = 2 * precision * recall / (precision + recall)
+    _run.log_scalar("edges_f1", f1)
+    print(f"edges F1: {f1}")
