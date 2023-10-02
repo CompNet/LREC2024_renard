@@ -129,8 +129,6 @@ def get_thg_characters(tokens: List[str]) -> Set[Character]:
         # and then prevents the smallest one from overlapping.
         for name in reversed(sorted(names, key=len)):
 
-            print(name)
-
             splitted = name.split(" ")
             mention_coords = find_pattern(tokens, splitted)
 
