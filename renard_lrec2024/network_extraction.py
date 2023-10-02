@@ -1,5 +1,8 @@
-from typing import Dict, Tuple, List, Set
+from typing import Dict, Tuple, List, Set, Optional
 import copy
+import numpy as np
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import maximum_bipartite_matching
 from renard.pipeline.core import Mention
 from renard.pipeline.characters_extraction import Character
 from renard_lrec2024.utils import find_pattern
@@ -114,11 +117,9 @@ THG_CHARACTERS_NAMES = [
 
 
 def get_thg_characters(tokens: List[str]) -> Set[Character]:
-
     characters = set()
 
     for names in THG_CHARACTERS_NAMES:
-
         mentions = []
 
         for name in names:
@@ -127,7 +128,7 @@ def get_thg_characters(tokens: List[str]) -> Set[Character]:
             for start, end in mention_coords:
                 mentions.append(Mention(tokens[start:end], start, end))
 
-        characters.add(Character(names mentions))
+        characters.add(Character(names, mentions))
 
     return characters
 
@@ -172,6 +173,23 @@ def load_thg_bio(path: str) -> Tuple[List[str], List[List[str]], List[str]]:
     return (tokens, split_thg_into_sentence(tokens), bio_tags)
 
 
-def align_characters(refs: List[Character], preds: List[Character]) -> Dict[Character, Character]:
+def align_characters(
+    refs: List[Character], preds: List[Character]
+) -> Dict[Character, Optional[Character]]:
     """Try to best align a set of predicted characters to a list of reference characters."""
-    pass
+    similarity = np.zeros((len(refs), len(preds)))
+    for r_i, ref_character in enumerate(refs):
+        for p_i, pred_character in enumerate(refs):
+            intersection = ref_character.names.intersection(pred_character.names)
+            union = ref_character.names.union(pred_character.names)
+            similarity[r_i][p_i] = len(intersection) / len(union)
+
+    graph = csr_matrix(similarity)
+    perm = maximum_bipartite_matching(graph, perm_type="column")
+
+    mapping = [[char, None] for char in refs]
+    for r_i, mapping_i in enumerate(perm):
+        if perm[r_i] != -1:
+            mapping[r_i][1] = preds[mapping_i]
+
+    return {c1: c2 for c1, c2 in mapping}
