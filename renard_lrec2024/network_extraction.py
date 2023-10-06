@@ -1,10 +1,12 @@
 from typing import Dict, Tuple, List, Set, Optional
 import copy
 import numpy as np
+import networkx as nx
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import maximum_bipartite_matching
 from renard.pipeline.core import Mention
 from renard.pipeline.characters_extraction import Character
+from renard.graph_utils import layout_nx_graph_reasonably
 from renard_lrec2024.utils import find_pattern
 
 
@@ -214,3 +216,65 @@ def align_characters(
             mapping[r_i][1] = preds[mapping_i]
 
     return {c1: c2 for c1, c2 in mapping}
+
+
+def compute_shared_layout(
+    G: nx.Graph,
+    H: nx.Graph,
+    G_to_H: Dict[Character, Optional[Character]],
+    H_to_G: Dict[Character, Optional[Character]],
+) -> Dict[Character, np.ndarray]:
+    """Compute a layout shared between nodes of graphs G and H.
+
+    :param G: a graph with Character nodes
+    :param H: a graph with Character nodes
+    :param G_to_H: Mapping from V_G to V_H ∪ {∅}
+    :param H_to_G: Mapping from V_H to V_G ∪ {∅}
+    :param alignment: a mapping from characters of ``G`` to characters of ``H``
+    :return: a dict of form ``{character: (x, y)}``
+    """
+    # Extract the union of both graph nodes, considering the mapping
+    # between G and H. To understand the following lines, remark that
+    # there are two possible cases:
+    #
+    # - G has strictly more nodes than H. Then, list(G.nodes) is the
+    #   entire set of nodes, since any node from H will have a
+    #   corresponding node in G by mapping H_to_G.
+    #
+    # - G has a number of nodes lesser or equal than H. In that case,
+    #   we need to extract the nodes from G *and* the nodes from H
+    #   that do not appear in G via mapping H_to_G
+    nodes = list(G.nodes)
+    for H_node, G_node in H_to_G.items():
+        if G_node is None:
+            nodes.append(H_node)
+
+    # We do something similar to above here, except we define the
+    # following mapping g_E from E_H to E_G:
+    # { (f(n1), f(n2)) if f(n1) ≠ ∅ and f(n2) ≠ ∅,
+    # { ∅              otherwise
+    edges = list(G.edges)
+    for n1, n2 in H.edges:
+        if H_to_G[n1] is None or H_to_G[n2] is None:
+            edges.append((n1, n2))
+
+    # Construct the union graph J between G and H
+    J = nx.Graph()
+    for node in nodes:
+        J.add_node(node)
+    for edge in edges:
+        J.add_edge(edge)
+
+    # union graph layout
+    layout = layout_nx_graph_reasonably(J)
+
+    # the layout will be used for both G and H. However, some nodes
+    # from H are not in the layout dictionary: only their equivalent
+    # in G are here. We add these nodes now, by specifying that their
+    # positions is the same as the position of their equivalent nodes
+    # in G
+    for node in H.nodes:
+        if not node in layout:
+            layout[node] = layout[H_to_G[node]]
+
+    return layout
