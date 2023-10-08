@@ -35,10 +35,6 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
         f"./data/network_extraction/TheHungerGames_annotated_no_extended_per_quotesfixed_chaptersfixed.conll"
     )
 
-    # TODO: dev
-    sentences = sentences[:1000]
-    tokens = list(flatten(sentences))
-
     # Full extraction pipeline
     # ------------------------
     full_pipeline = Pipeline(
