@@ -7,7 +7,7 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import maximum_bipartite_matching
 from renard.pipeline.core import Mention
 from renard.pipeline.characters_extraction import Character
-from renard.graph_utils import layout_nx_graph_reasonably
+from renard.plot_utils import layout_nx_graph_reasonably
 from renard_lrec2024.utils import find_pattern
 
 
@@ -91,7 +91,7 @@ THG_CHARACTERS_NAMES = [
         {"Effie Trinket"},
         {"Peacekeepers"},
         {"Head Peacekeeper"},
-        {"Flavius "},
+        {"Flavius"},
         {"Venia"},
         {"Octavia"},
         {"Cinna"},
@@ -105,7 +105,7 @@ THG_CHARACTERS_NAMES = [
         {"Titus"},
         {"the boy from District 9"},
         {"the girl from District 3"},
-        {"the boy from 4 "},
+        {"the boy from 4"},
         {"the boy from District 5"},
         {"Thresh"},
         {"the girl from District 4"},
@@ -254,7 +254,6 @@ def score_network_extraction_edges(
 def compute_shared_layout(
     G: nx.Graph,
     H: nx.Graph,
-    G_to_H: Dict[Character, Optional[Character]],
     H_to_G: Dict[Character, Optional[Character]],
 ) -> Dict[Character, np.ndarray]:
     """Compute a layout shared between nodes of graphs G and H.
@@ -267,16 +266,7 @@ def compute_shared_layout(
     :return: a dict of form ``{character: (x, y)}``
     """
     # Extract the union of both graph nodes, considering the mapping
-    # between G and H. To understand the following lines, remark that
-    # there are two possible cases:
-    #
-    # - G has strictly more nodes than H. Then, list(G.nodes) is the
-    #   entire set of nodes, since any node from H will have a
-    #   corresponding node in G by mapping H_to_G.
-    #
-    # - G has a number of nodes lesser or equal than H. In that case,
-    #   we need to extract the nodes from G *and* the nodes from H
-    #   that do not appear in G via mapping H_to_G
+    # between G and H.
     nodes = list(G.nodes)
     for H_node, G_node in H_to_G.items():
         if G_node is None:
@@ -284,11 +274,13 @@ def compute_shared_layout(
 
     # We do something similar to above here, except we define the
     # following mapping g_E from E_H to E_G:
-    # { (f(n1), f(n2)) if f(n1) ≠ ∅ and f(n2) ≠ ∅,
-    # { ∅              otherwise
+    # { (g_V(n1), g_V(n2)) if g_V(n1) ≠ ∅ and g_V(n2) ≠ ∅,
+    # { ∅                  otherwise
     edges = list(G.edges)
     for n1, n2 in H.edges:
         if H_to_G[n1] is None or H_to_G[n2] is None:
+            n1 = H_to_G.get(n1) or n1
+            n2 = H_to_G.get(n2) or n2
             edges.append((n1, n2))
 
     # Construct the union graph J between G and H
@@ -296,7 +288,7 @@ def compute_shared_layout(
     for node in nodes:
         J.add_node(node)
     for edge in edges:
-        J.add_edge(edge)
+        J.add_edge(*edge)
 
     # union graph layout
     layout = layout_nx_graph_reasonably(J)
