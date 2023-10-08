@@ -13,6 +13,7 @@ from renard_lrec2024.network_extraction import (
     load_thg_bio,
     get_thg_characters,
     align_characters,
+    score_network_extraction_edges,
 )
 from renard_lrec2024.utils import archive_graph, archive_pipeline_state
 
@@ -23,7 +24,7 @@ ex.captured_out_filter = apply_backspaces_and_linefeeds  # type: ignore
 
 @ex.config
 def config():
-    co_occurrences_dist = (10, "tokens")
+    co_occurrences_dist = (1, "sentences")
 
 
 @ex.automain
@@ -32,9 +33,9 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
         f"./data/network_extraction/TheHungerGames_annotated_no_extended_per_quotesfixed_chaptersfixed.conll"
     )
 
-    # Full extraction pipeline (not using annotations)
-    # ------------------------------------------------
-    pipeline = Pipeline(
+    # Full extraction pipeline
+    # ------------------------
+    full_pipeline = Pipeline(
         [
             BertNamedEntityRecognizer(),
             BertCoreferenceResolver(),
@@ -43,8 +44,21 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
         ]
     )
 
-    out = pipeline(tokens=tokens, sentences=sentences)
-    archive_pipeline_state(_run, out, "pipeline_state")
+    full_out = full_pipeline(tokens=tokens, sentences=sentences)
+    archive_pipeline_state(_run, full_out, "full_pipeline_state")
+
+    # -corefs extraction pipeline
+    # ---------------------------
+    no_corefs_pipeline = Pipeline(
+        [
+            BertNamedEntityRecognizer(),
+            GraphRulesCharactersExtractor(),
+            CoOccurrencesGraphExtractor(co_occurrences_dist),
+        ]
+    )
+
+    no_corefs_out = no_corefs_pipeline(tokens=tokens, sentences=sentences)
+    archive_pipeline_state(_run, no_corefs_out, "no_corefs_pipeline_state")
 
     # Gold pipeline using annotations
     # -------------------------------
@@ -57,47 +71,24 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
 
     # Comparison
     # ----------
-    archive_graph(_run, out, "thg")
-    archive_graph(_run, gold_out, "thg_gold")
+    archive_graph(_run, full_out, "full_thg")
+    archive_graph(_run, no_corefs_out, "no_corefs_thg")
+    archive_graph(_run, gold_out, "gold_thg")
 
-    nodes_metrics = score_characters_extraction(
-        [character.names for character in gold_out.characters],
-        [character.names for character in out.characters],
-    )
-    print(f"nodes metrics: {nodes_metrics}")
-    for k, v in nodes_metrics.items():
-        _run.log_scalar(f"nodes_{k}", v)
+    for config, out in [("full", full_out), ("no_corefs", no_corefs_out)]:
 
-    # edge recall
-    characters_mapping = align_characters(gold_out.characters, out.characters)
-    recall_list = []
-    for r1, r2 in gold_out.characters_graph.edges:
-        c1 = characters_mapping[r1]
-        c2 = characters_mapping[r2]
-        if (c1, c2) in out.characters_graph.edges:
-            recall_list.append(1)
-        else:
-            recall_list.append(0)
-    recall = sum(recall_list) / len(recall_list)
-    _run.log_scalar("edge_recall", recall)
-    print(f"edges recall: {recall}")
+        nodes_metrics = score_characters_extraction(
+            [character.names for character in gold_out.characters],
+            [character.names for character in out.characters],
+        )
+        print(f"{config} nodes metrics: {nodes_metrics}")
+        for k, v in nodes_metrics.items():
+            _run.log_scalar(f"{config}.nodes.{k}", v)
 
-    # edge precision
-    precision_list = []
-    r_characters_mapping = {
-        v: k for k, v in characters_mapping.items() if not v is None
-    }
-    for c1, c2 in out.characters_graph.edges:
-        r1 = r_characters_mapping.get(c1)
-        r2 = r_characters_mapping.get(c2)
-        if (r1, r2) in gold_out.characters_graph.edges:
-            precision_list.append(1)
-        else:
-            precision_list.append(0)
-    precision = sum(precision_list) / len(precision_list)
-    _run.log_scalar("edges_precision", precision)
-    print(f"edges precision: {precision}")
-
-    f1 = 2 * precision * recall / (precision + recall)
-    _run.log_scalar("edges_f1", f1)
-    print(f"edges F1: {f1}")
+        characters_mapping = align_characters(gold_out.characters, out.characters)
+        edges_metrics = score_network_extraction_edges(
+            gold_out.characters_graph, out.characters_graph, characters_mapping
+        )
+        print(f"{config} edges metrics: {edges_metrics}")
+        for k, v in edges_metrics.items():
+            _run.log_scalar(f"{config}.edges.{k}", v)

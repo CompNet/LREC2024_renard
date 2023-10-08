@@ -1,5 +1,6 @@
 from typing import Dict, Tuple, List, Set, Optional
 import copy
+import networkx as nx
 import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import maximum_bipartite_matching
@@ -214,3 +215,35 @@ def align_characters(
             mapping[r_i][1] = preds[mapping_i]
 
     return {c1: c2 for c1, c2 in mapping}
+
+
+def score_network_extraction_edges(
+    gold_graph: nx.Graph,
+    pred_graph: nx.Graph,
+    mapping: Dict[Character, Optional[Character]],
+) -> dict:
+    recall_list = []
+    for r1, r2 in gold_graph.edges:
+        c1 = mapping[r1]
+        c2 = mapping[r2]
+        if (c1, c2) in pred_graph.edges:
+            recall_list.append(1)
+        else:
+            recall_list.append(0)
+    recall = sum(recall_list) / len(recall_list)
+
+    # edge precision
+    precision_list = []
+    reverse_mapping = {v: k for k, v in mapping.items() if not v is None}
+    for c1, c2 in pred_graph.edges:
+        r1 = reverse_mapping.get(c1)
+        r2 = reverse_mapping.get(c2)
+        if (r1, r2) in gold_graph.edges:
+            precision_list.append(1)
+        else:
+            precision_list.append(0)
+    precision = sum(precision_list) / len(precision_list)
+
+    f1 = 2 * precision * recall / (precision + recall)
+
+    return {"precision": precision, "recall": recall, "f1": f1}
