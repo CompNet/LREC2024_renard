@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, List, Set, Optional
+from typing import Dict, Tuple, List, Set, Optional, Any
 import copy
 import networkx as nx
 import numpy as np
@@ -196,10 +196,17 @@ def load_thg_bio(path: str) -> Tuple[List[str], List[List[str]], List[str]]:
 
 def align_characters(
     refs: List[Character], preds: List[Character]
-) -> Dict[Character, Optional[Character]]:
-    """Try to best align a set of predicted characters to a list of reference characters.
+) -> Tuple[Dict[Character, Optional[Character]], Dict[Character, Optional[Character]]]:
+    """Try to best align a set of predicted characters to a list of
+    reference characters.
 
-    :return: a dict with keys from ``refs`` and values from ``preds``. Values can be ``None``.
+    :return: a tuple:
+
+            - a dict with keys from ``refs`` and values from
+              ``preds``.  Values can be ``None``.
+
+            - a dict with keys from ``preds`` and values from
+              ``refs``.  Values can be ``None``.
     """
     similarity = np.zeros((len(refs), len(preds)))
     for r_i, ref_character in enumerate(refs):
@@ -216,7 +223,14 @@ def align_characters(
         if perm[r_i] != -1:
             mapping[r_i][1] = preds[mapping_i]
 
-    return {c1: c2 for c1, c2 in mapping}
+    mapping = {c1: c2 for c1, c2 in mapping}
+
+    reverse_mapping = {v: k for k, v in mapping.items()}
+    for character in preds:
+        if not character in reverse_mapping:
+            reverse_mapping[character] = None
+
+    return (mapping, reverse_mapping)
 
 
 def score_network_extraction_edges(
@@ -251,37 +265,39 @@ def score_network_extraction_edges(
     return {"precision": precision, "recall": recall, "f1": f1}
 
 
-def compute_shared_layout(
+def shared_layout(
     G: nx.Graph,
-    H: nx.Graph,
-    H_to_G: Dict[Character, Optional[Character]],
+    H_list: List[nx.Graph],
+    H_to_G_list: List[Dict[Character, Optional[Character]]],
 ) -> Dict[Character, np.ndarray]:
-    """Compute a layout shared between nodes of graphs G and H.
+    """Compute a layout shared between a reference graph G and a list
+    of related graphs H.
 
-    :param G: a graph with Character nodes
-    :param H: a graph with Character nodes
-    :param G_to_H: Mapping from V_G to V_H ∪ {∅}
-    :param H_to_G: Mapping from V_H to V_G ∪ {∅}
-    :param alignment: a mapping from characters of ``G`` to characters of ``H``
+    :param G: a reference graph with Character nodes
+    :param H_list: a list of related graphs with Character nodes
+    :param H_to_G_list: A list of mapping from V_H to V_G ∪ {∅}
+
     :return: a dict of form ``{character: (x, y)}``
     """
     # Extract the union of both graph nodes, considering the mapping
     # between G and H.
     nodes = list(G.nodes)
-    for H_node, G_node in H_to_G.items():
-        if G_node is None:
-            nodes.append(H_node)
+    for H, H_to_G in zip(H_list, H_to_G_list):
+        for H_node, G_node in H_to_G.items():
+            if G_node is None:
+                nodes.append(H_node)
 
     # We do something similar to above here, except we define the
     # following mapping g_E from E_H to E_G:
     # { (g_V(n1), g_V(n2)) if g_V(n1) ≠ ∅ and g_V(n2) ≠ ∅,
     # { ∅                  otherwise
     edges = list(G.edges)
-    for n1, n2 in H.edges:
-        if H_to_G[n1] is None or H_to_G[n2] is None:
-            n1 = H_to_G.get(n1) or n1
-            n2 = H_to_G.get(n2) or n2
-            edges.append((n1, n2))
+    for H, H_to_G in zip(H_list, H_to_G_list):
+        for n1, n2 in H.edges:
+            if H_to_G[n1] is None or H_to_G[n2] is None:
+                n1 = H_to_G.get(n1) or n1
+                n2 = H_to_G.get(n2) or n2
+                edges.append((n1, n2))
 
     # Construct the union graph J between G and H
     J = nx.Graph()
@@ -291,15 +307,17 @@ def compute_shared_layout(
         J.add_edge(*edge)
 
     # union graph layout
-    layout = layout_nx_graph_reasonably(J)
+    # layout = layout_nx_graph_reasonably(J)
+    layout = nx.kamada_kawai_layout(J)
 
-    # the layout will be used for both G and H. However, some nodes
-    # from H are not in the layout dictionary: only their equivalent
-    # in G are here. We add these nodes now, by specifying that their
-    # positions is the same as the position of their equivalent nodes
-    # in G
-    for node in H.nodes:
-        if not node in layout:
-            layout[node] = layout[H_to_G[node]]
+    # the layout will be used for both G and all graphs in
+    # H_list. However, some nodes from these H are not in the layout
+    # dictionary: only their equivalent in G are here. We add these
+    # nodes now, by specifying that their positions is the same as the
+    # position of their equivalent nodes in G
+    for H, H_to_G in zip(H_list, H_to_G_list):
+        for node in H.nodes:
+            if not node in layout:
+                layout[node] = layout[H_to_G[node]]
 
     return layout
