@@ -11,7 +11,7 @@ if [[ ! -d "$PDNC_PATH" ]]; then
 fi
 
 python xp_speaker_attribution.py\
-       --file_storage='./runs_characters_extraction'\
+       --file_storage='./runs_speaker_attribution'\
        with\
        seed=0\
        PDNC_path="$PDNC_PATH"
