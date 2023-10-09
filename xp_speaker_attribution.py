@@ -107,18 +107,26 @@ def main(
     assert len(refs) == len(preds)
 
     accuracy = sum(
-        [1 if speaker == pred else 0 for speaker, pred in zip(preds, refs)]
+        [1 if speaker == pred else 0 for speaker, pred in zip(refs, preds)]
     ) / len(refs)
 
-    precision = sum(
+    TP = sum([1 if speaker == pred else 0 for speaker, pred in zip(refs, preds)])
+    FP = sum(
         [
-            1 if speaker == pred else 0
-            for speaker, pred in zip(preds, refs)
-            if not pred is None
+            1 if speaker != pred else 0
+            for speaker, pred in zip(refs, preds)
+            if not speaker is None
         ]
-    ) / len([p for p in preds if not p is None])
+    )
+    FN = sum([1 for pred in preds if pred is None])
+
+    precision = TP / (TP + FP)
+    recall = TP / (TP + FN)
+    f1 = 2 * precision * recall / (precision + recall)
 
     _run.log_scalar("accuracy", accuracy)
     _run.log_scalar("precision", precision)
+    _run.log_scalar("recall", recall)
+    _run.log_scalar("f1", f1)
 
-    print({"precision": precision, "accuracy": accuracy})
+    print({"precision": precision, "recall": recall, "f1": f1, "accuracy": accuracy})
