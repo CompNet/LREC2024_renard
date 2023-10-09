@@ -91,7 +91,7 @@ def main(
             quotes.append(Quote(quote.start, quote.end, quote.tokens))
 
     # Define and run pipeline
-    pipeline = Pipeline([BertSpeakerDetector(model)])
+    pipeline = Pipeline([BertSpeakerDetector(model, tokenizer=tokenizer)])
     preds = []
     for document in eval_dataset.documents:
         out = pipeline(tokens=document.tokens, quotes=quotes, characters=characters)
@@ -99,7 +99,9 @@ def main(
 
     # Compute metrics
     refs = [
-        quote.speaker for document in eval_dataset.document for quote in document.quotes
+        quote.speaker
+        for document in eval_dataset.documents
+        for quote in document.quotes
     ]
     assert len(refs) > 0
     assert len(refs) == len(preds)

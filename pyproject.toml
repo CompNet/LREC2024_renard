@@ -9,7 +9,7 @@ packages = [{include = "renard_lrec2024"}]
 [tool.poetry.dependencies]
 python = "^3.8,<3.11"
 sacred = "^0.8.4"
-renard-pipeline = { git = "https://github.com/CompNet/Renard", rev = "c18fab1" }
+renard-pipeline = { git = "https://github.com/CompNet/Renard", rev = "2ad2697" }
 tibert = { git = "https://github.com/CompNet/Tibert", rev = "9033244" }
 grimbert = { git = "https://github.com/CompNet/Grimbert", rev = "a4a7dbc" }
 datasets = "^2.14.5"
