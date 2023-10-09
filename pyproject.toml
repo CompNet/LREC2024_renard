@@ -9,11 +9,13 @@ packages = [{include = "renard_lrec2024"}]
 [tool.poetry.dependencies]
 python = "^3.8,<3.11"
 sacred = "^0.8.4"
-renard-pipeline = { git = "https://github.com/CompNet/Renard", rev = "df686d3" }
-tibert = { git = "https://github.com/CompNet/Tibert", rev = "95ac76d" }
+renard-pipeline = { git = "https://github.com/CompNet/Renard", rev = "c18fab1" }
+tibert = { git = "https://github.com/CompNet/Tibert", rev = "9033244" }
+grimbert = { git = "https://github.com/CompNet/Grimbert", rev = "a4a7dbc" }
 datasets = "^2.14.5"
-accelerate = "^0.23.0"
+accelerate = "^0.22.0"
 rich = "^13.5.2"
+torch = "2.0.0"
 
 [build-system]
 requires = ["poetry-core"]

@@ -5,10 +5,15 @@ from sacred.run import Run
 from sacred.utils import apply_backspaces_and_linefeeds
 from rich import print
 from renard.pipeline import Pipeline
+from renard.pipeline.quote_detection import QuoteDetector
 from renard.pipeline.ner import BertNamedEntityRecognizer
 from renard.pipeline.corefs import BertCoreferenceResolver
 from renard.pipeline.characters_extraction import GraphRulesCharactersExtractor
-from renard.pipeline.graph_extraction import CoOccurrencesGraphExtractor
+from renard.pipeline.speaker_attribution import BertSpeakerDetector
+from renard.pipeline.graph_extraction import (
+    CoOccurrencesGraphExtractor,
+    ConversationalGraphExtractor,
+)
 from renard_lrec2024.characters_extraction import score_characters_extraction
 from renard_lrec2024.network_extraction import (
     load_thg_bio,
@@ -45,7 +50,6 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
             CoOccurrencesGraphExtractor(co_occurrences_dist),
         ]
     )
-
     full_out = full_pipeline(tokens=tokens, sentences=sentences)
     archive_pipeline_state(_run, full_out, "full_pipeline_state")
 
@@ -58,9 +62,21 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
             CoOccurrencesGraphExtractor(co_occurrences_dist),
         ]
     )
-
     no_corefs_out = no_corefs_pipeline(tokens=tokens, sentences=sentences)
     archive_pipeline_state(_run, no_corefs_out, "no_corefs_pipeline_state")
+
+    # conversational pipeline
+    convers_pipeline = Pipeline(
+        [
+            QuoteDetector(),
+            BertNamedEntityRecognizer(),
+            GraphRulesCharactersExtractor(),
+            BertSpeakerDetector(),  # TODO: problem: model is not uploaded atm...
+            ConversationalGraphExtractor(),
+        ]
+    )
+    convers_out = convers_pipeline(tokens=tokens, sentences=sentences)
+    archive_pipeline_state(_run, convers_out, "convers_pipeline_state")
 
     # Gold pipeline using annotations
     # -------------------------------
@@ -79,19 +95,28 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
     no_corefs_mapping, no_corefs_reverse_mapping = align_characters(
         gold_out.characters, no_corefs_out.characters
     )
+    convers_mapping, converse_reverse_mapping = align_characters(
+        gold_out.characters, convers_out.characters
+    )
 
     layout = shared_layout(
         gold_out.characters_graph,
-        [full_out.characters_graph, no_corefs_out.characters_graph],
-        [full_reverse_mapping, no_corefs_reverse_mapping],
+        [
+            full_out.characters_graph,
+            no_corefs_out.characters_graph,
+            convers_out.characters_graph,
+        ],
+        [full_reverse_mapping, no_corefs_reverse_mapping, converse_reverse_mapping],
     )
     archive_graph(_run, full_out, "full_thg", layout)
     archive_graph(_run, no_corefs_out, "no_corefs_thg", layout)
+    archive_graph(_run, convers_out, "convers_out", layout)
     archive_graph(_run, gold_out, "gold_thg", layout)
 
     for config, out, mapping in [
         ("full", full_out, full_mapping),
         ("no_corefs", no_corefs_out, no_corefs_mapping),
+        ("convers", convers_out, convers_mapping),
     ]:
 
         nodes_metrics = score_characters_extraction(
