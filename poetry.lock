@@ -2083,8 +2083,8 @@ stanza = ["stanza (>=1.3.0,<2.0.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/CompNet/Renard"
-reference = "756aed9"
-resolved_reference = "756aed9b165ae325ec4658c4b0a180e07ae09ca8"
+reference = "8a2b4ed"
+resolved_reference = "8a2b4ed7091111530e50ccf0de2e964ba1683ff1"
 
 [[package]]
 name = "requests"
@@ -3158,4 +3158,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8,<3.11"
-content-hash = "12c9aa85ee26ae2706ecfc256aa2230e4f2aa652256b379feed8d19bbbd2e9d3"
+content-hash = "f3acd3d869aeb5ac25dc73d348c31385babf5e6f12167311735f360203322b66"

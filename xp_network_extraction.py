@@ -66,12 +66,13 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
     archive_pipeline_state(_run, no_corefs_out, "no_corefs_pipeline_state")
 
     # conversational pipeline
+    # -----------------------
     convers_pipeline = Pipeline(
         [
             QuoteDetector(),
             BertNamedEntityRecognizer(),
             GraphRulesCharactersExtractor(),
-            BertSpeakerDetector(),  # TODO: problem: model is not uploaded atm...
+            BertSpeakerDetector(),
             ConversationalGraphExtractor(),
         ]
     )
