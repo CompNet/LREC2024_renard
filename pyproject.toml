@@ -11,7 +11,7 @@ python = "^3.8,<3.11"
 sacred = "^0.8.4"
 renard-pipeline = { git = "https://github.com/CompNet/Renard", rev = "756aed9" }
 tibert = { git = "https://github.com/CompNet/Tibert", rev = "9033244" }
-grimbert = { git = "https://github.com/CompNet/Grimbert", rev = "a4a7dbc" }
+grimbert = { git = "https://github.com/CompNet/Grimbert", rev = "29753b6" }
 datasets = "^2.14.5"
 accelerate = "^0.22.0"
 rich = "^13.5.2"

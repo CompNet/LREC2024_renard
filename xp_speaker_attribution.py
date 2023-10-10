@@ -19,9 +19,9 @@ ex.captured_out_filter = apply_backspaces_and_linefeeds  # type: ignore
 
 @ex.config
 def config():
-    batch_size: int = 1
-    bert_checkpoint: str = "bert-base-cased"
-    lr: float = 2e-5
+    batch_size: int = 8
+    bert_checkpoint: str = "SpanBERT/spanbert-base-cased"
+    lr: float = 1e-5
     epochs_nb: int = 2
     quote_ctx_len: int = 512
     speaker_repr_nb: int = 4
@@ -48,7 +48,9 @@ def main(
     train_dataset, eval_dataset = dataset.splitted(0.8)
 
     weights = train_dataset.weights().to(device)
-    model = SpeakerAttributionModel.from_pretrained(bert_checkpoint, weights=weights)
+    model = SpeakerAttributionModel.from_pretrained(
+        bert_checkpoint, weights=weights, segment_len=512
+    ).to(device)
 
     model = train_speaker_attribution(
         model,
@@ -56,7 +58,7 @@ def main(
         eval_dataset,
         _run,
         # HG TrainingArgs
-        output_dir="./sa_model",
+        output_dir="./sa-model",
         overwrite_output_dir=True,
         save_strategy="epoch",
         evaluation_strategy="epoch",
