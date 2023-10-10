@@ -5,13 +5,14 @@ This repository contains the code supporting the LREC 2024 article "Renard: A Mo
 
 # Reproducing results
 
-First, install the dependencies with `pip install -r requirements`. 
+First, install the dependencies with `pip install -r requirements` (or `poetry install`). 
 
 Shell scripts are available to reproduce all of the article's experiments:
 
-| Experiment                         | Script                        |
-|------------------------------------|-------------------------------|
-| NER performance                    | `xp_ner.sh`                   |
-| Speaker Attribution performance    | `xp_speaker_attribution.sh`   |
-| Coreference Resolution performance | `xp_coref.sh`                 |
-| Characters Extraction performance  | `xp_characters_extraction.sh` |
+| Experiment             | Script                        | Output directory             |
+|------------------------|-------------------------------|------------------------------|
+| NER                    | `xp_ner.sh`                   | `runs_ner`                   |
+| Speaker Attribution    | `xp_speaker_attribution.sh`   | `runs_speaker_attribution`   |
+| Coreference Resolution | `xp_coref.sh`                 | `runs_coref`                 |
+| Characters Extraction  | `xp_characters_extraction.sh` | `runs_characters_extraction` |
+| Network Extraction     | `xp_network_extraction.sh`    | `runs_network_extraction`    |
