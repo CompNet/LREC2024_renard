@@ -32,10 +32,15 @@ ex.captured_out_filter = apply_backspaces_and_linefeeds  # type: ignore
 @ex.config
 def config():
     co_occurrences_dist = (1, "sentences")
+    conversation_dist = (3, "sentences")
 
 
 @ex.automain
-def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
+def main(
+    _run: Run,
+    co_occurrences_dist: Union[int, Tuple[int, str]],
+    conversation_dist: Union[int, Tuple[int, int]],
+):
     tokens, sentences, _ = load_thg_bio(
         f"./data/network_extraction/TheHungerGames_annotated_no_extended_per_quotesfixed_chaptersfixed.conll"
     )
@@ -73,7 +78,7 @@ def main(_run: Run, co_occurrences_dist: Union[int, Tuple[int, str]]):
             BertNamedEntityRecognizer(),
             GraphRulesCharactersExtractor(),
             BertSpeakerDetector(),
-            ConversationalGraphExtractor(),
+            ConversationalGraphExtractor(conversation_dist=conversation_dist),
         ]
     )
     convers_out = convers_pipeline(tokens=tokens, sentences=sentences)
