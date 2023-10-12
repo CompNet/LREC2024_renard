@@ -74,9 +74,14 @@ def main(
 
     # Inference
     # ---------
-    # Create eval characters in the format Renard expect
-    characters = []
+
+    # Define and run pipeline
+    pipeline = Pipeline([BertSpeakerDetector(model, tokenizer=tokenizer)])
+    preds = []
     for document in eval_dataset.documents:
+
+        # Create eval characters in the format Renard expect
+        characters = []
         for speaker in document.speakers():
             speaker_mentions = [m for m in document.mentions if m.speaker == speaker]
             characters.append(
@@ -86,16 +91,11 @@ def main(
                 )
             )
 
-    # Create eval quotes in the format Renard expect
-    quotes = []
-    for document in eval_dataset.documents:
+        # Create eval quotes in the format Renard expect
+        quotes = []
         for quote in document.quotes:
             quotes.append(Quote(quote.start, quote.end, quote.tokens))
 
-    # Define and run pipeline
-    pipeline = Pipeline([BertSpeakerDetector(model, tokenizer=tokenizer)])
-    preds = []
-    for document in eval_dataset.documents:
         out = pipeline(tokens=document.tokens, quotes=quotes, characters=characters)
         preds += out.speakers
 
