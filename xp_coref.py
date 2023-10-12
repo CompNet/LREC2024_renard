@@ -27,7 +27,7 @@ def config():
     mentions_per_tokens: float = 0.4
     segment_size: int = 128
     sents_per_documents_train: int = 10
-    sents_per_documents_test = None
+    sents_per_documents_test: int = 10
     batch_size: int = 1
     epochs_nb: int = 30
     bert_lr: float = 1e-5
