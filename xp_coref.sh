@@ -12,6 +12,6 @@ fi
 
 python xp_coref.py\
        --file_storage='./runs_coref'\
-       seed=0\
        with\
+       seed=0\
        litbank_path="$LITBANK_PATH"
