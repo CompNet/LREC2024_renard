@@ -178,7 +178,7 @@ def load_thg_bio(path: str) -> Tuple[List[str], List[List[str]], List[str]]:
     :param cut_into_chapters: if ``True``, return ``chapter_tokens``
         instead of ``tokens``
 
-    :return: ``(tokens, bio_tags)`` or ``(chapter_tokens, bio_tags)``
+    :return: ``(tokens, sentences, bio_tags)``
     """
     tokens = []
     bio_tags = []
