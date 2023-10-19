@@ -1,5 +1,4 @@
 from typing import Tuple, Union
-from more_itertools.recipes import flatten
 from sacred import Experiment
 from sacred.run import Run
 from sacred.utils import apply_backspaces_and_linefeeds
@@ -8,7 +7,7 @@ from renard.pipeline import Pipeline
 from renard.pipeline.quote_detection import QuoteDetector
 from renard.pipeline.ner import BertNamedEntityRecognizer
 from renard.pipeline.corefs import BertCoreferenceResolver
-from renard.pipeline.characters_extraction import GraphRulesCharactersExtractor
+from renard.pipeline.character_unification import GraphRulesCharacterUnifier
 from renard.pipeline.speaker_attribution import BertSpeakerDetector
 from renard.pipeline.graph_extraction import (
     CoOccurrencesGraphExtractor,
@@ -51,7 +50,7 @@ def main(
         [
             BertNamedEntityRecognizer(),
             BertCoreferenceResolver(),
-            GraphRulesCharactersExtractor(),
+            GraphRulesCharacterUnifier(),
             CoOccurrencesGraphExtractor(co_occurrences_dist),
         ]
     )
@@ -63,7 +62,7 @@ def main(
     no_corefs_pipeline = Pipeline(
         [
             BertNamedEntityRecognizer(),
-            GraphRulesCharactersExtractor(),
+            GraphRulesCharacterUnifier(),
             CoOccurrencesGraphExtractor(co_occurrences_dist),
         ]
     )
@@ -76,7 +75,7 @@ def main(
         [
             QuoteDetector(),
             BertNamedEntityRecognizer(),
-            GraphRulesCharactersExtractor(),
+            GraphRulesCharacterUnifier(),
             BertSpeakerDetector(),
             ConversationalGraphExtractor(conversation_dist=conversation_dist),
         ]

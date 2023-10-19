@@ -11,9 +11,9 @@ from tqdm import tqdm
 from renard.pipeline import Pipeline
 from renard.pipeline.corefs import BertCoreferenceResolver
 from renard.pipeline.tokenization import NLTKTokenizer
-from renard.pipeline.characters_extraction import GraphRulesCharactersExtractor
-from renard_lrec2024.characters_extraction import (
-    score_characters_extraction,
+from renard.pipeline.character_unification import GraphRulesCharacterUnifier
+from renard_lrec2024.character_unification import (
+    score_character_unification,
     PDNCPerfectNamedEntityRecognizer,
 )
 
@@ -69,7 +69,7 @@ def main(_run: Run, PDNC_path: str, use_coref: bool):
     steps = [NLTKTokenizer(), PDNCPerfectNamedEntityRecognizer()]
     if use_coref:
         steps.append(BertCoreferenceResolver())
-    steps.append(GraphRulesCharactersExtractor(link_corefs_mentions=False))
+    steps.append(GraphRulesCharacterUnifier(link_corefs_mentions=False))
     pipeline = Pipeline(steps, warn=False, progress_report=None)
 
     predicted_characters = []
@@ -99,7 +99,7 @@ def main(_run: Run, PDNC_path: str, use_coref: bool):
     # we perform scoring as in Vala et. al, 2015
     metrics_dict = defaultdict(list)
     for book, preds in zip(PDNC, predicted_characters):
-        metrics = score_characters_extraction(book.characters, preds)
+        metrics = score_character_unification(book.characters, preds)
         for k, v in metrics.items():
             metrics_dict[k].append(v)
             _run.log_scalar(f"{book.title}.{k}", v)

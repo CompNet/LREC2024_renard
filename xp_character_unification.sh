@@ -10,15 +10,15 @@ if [[ ! -d "$PDNC_PATH" ]]; then
     popd
 fi
 
-python xp_characters_extraction.py\
-       --file_storage='./runs_characters_extraction'\
+python xp_character_unification.py\
+       --file_storage='./runs_character_unification'\
        with\
        seed=0\
        PDNC_path="$PDNC_PATH"\
        use_coref=False
 
-python xp_characters_extraction.py\
-       --file_storage='./runs_characters_extraction'\
+python xp_character_unification.py\
+       --file_storage='./runs_character_unification'\
        with\
        seed=0\
        PDNC_path="$PDNC_PATH"\

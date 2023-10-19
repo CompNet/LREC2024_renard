@@ -38,7 +38,7 @@ class PDNCPerfectNamedEntityRecognizer(PipelineStep):
         return {"entities"}
 
 
-def score_characters_extraction(refs: List[Set[str]], preds: List[Set[str]]) -> dict:
+def score_character_unification(refs: List[Set[str]], preds: List[Set[str]]) -> dict:
 
     preds_nb = len(preds)
     refs_nb = len(refs)
