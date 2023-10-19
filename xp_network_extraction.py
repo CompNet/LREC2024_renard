@@ -13,7 +13,7 @@ from renard.pipeline.graph_extraction import (
     CoOccurrencesGraphExtractor,
     ConversationalGraphExtractor,
 )
-from renard_lrec2024.characters_extraction import score_characters_extraction
+from renard_lrec2024.character_unification import score_character_unification
 from renard_lrec2024.network_extraction import (
     load_thg_bio,
     get_thg_characters,
@@ -124,7 +124,7 @@ def main(
         ("convers", convers_out, convers_mapping),
     ]:
 
-        nodes_metrics = score_characters_extraction(
+        nodes_metrics = score_character_unification(
             [character.names for character in gold_out.characters],
             [character.names for character in out.characters],
         )
