@@ -11,7 +11,7 @@ from tibert import (
     CoreferenceDocument,
 )
 from tibert.train import train_coref_model
-from tibert.score import score_coref_predictions
+from tibert.score import score_coref_predictions, score_mention_detection
 from renard.pipeline import Pipeline
 from renard.pipeline.corefs import BertCoreferenceResolver
 
@@ -101,9 +101,17 @@ def main(
     # Scoring
     # -------
     metrics = score_coref_predictions(preds, test_dataset.documents)
-
     for metric_name, metric_dict in metrics.items():
         for metric_key, value in metric_dict.items():
             _run.log_scalar(f"{metric_name}.{metric_key}", value)
-
     print(metrics)
+
+    mention_p, mention_r, mention_f1 = score_mention_detection(
+        preds, test_dataset.documents
+    )
+    _run.log_scalar("mention_precision", mention_p)
+    _run.log_scalar("mention_recall", mention_r)
+    _run.log_scalar("mention_f1", mention_f1)
+    print(f"mention precision: {mention_p}")
+    print(f"mention recall: {mention_r}")
+    print(f"mention f1: {mention_f1}")

@@ -78,36 +78,33 @@ def main(
     # Define and run pipeline
     pipeline = Pipeline([BertSpeakerDetector(model, tokenizer=tokenizer)])
     preds = []
+    refs = []
     for document in eval_dataset.documents:
 
         # Create eval characters in the format Renard expect
         characters = []
+        speaker_to_character = {}
         for speaker in document.speakers():
             speaker_mentions = [m for m in document.mentions if m.speaker == speaker]
-            characters.append(
-                Character(
-                    frozenset(speaker),
-                    [Mention(m.tokens, m.start, m.end) for m in speaker_mentions],
-                )
+            character = Character(
+                frozenset([speaker]),
+                [Mention(m.tokens, m.start, m.end) for m in speaker_mentions],
             )
+            characters.append(character)
+            speaker_to_character[speaker] = character
+            characters = []
 
-        # Create eval quotes in the format Renard expect
+        # Create eval quotes in the format Renard expect. Also, create
+        # gold labels.
         quotes = []
         for quote in document.quotes:
             quotes.append(Quote(quote.start, quote.end, quote.tokens))
+            refs.append(speaker_to_character[quote.speaker])
 
         out = pipeline(tokens=document.tokens, quotes=quotes, characters=characters)
         preds += out.speakers
 
     # Compute metrics
-    refs = [
-        quote.speaker
-        for document in eval_dataset.documents
-        for quote in document.quotes
-    ]
-    assert len(refs) > 0
-    assert len(refs) == len(preds)
-
     accuracy = sum(
         [1 if speaker == pred else 0 for speaker, pred in zip(refs, preds)]
     ) / len(refs)
@@ -117,7 +114,7 @@ def main(
         [
             1 if speaker != pred else 0
             for speaker, pred in zip(refs, preds)
-            if not speaker is None
+            if not pred is None
         ]
     )
     FN = sum([1 for pred in preds if pred is None])
