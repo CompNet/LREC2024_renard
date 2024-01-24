@@ -80,7 +80,6 @@ def main(
     preds = []
     refs = []
     for document in eval_dataset.documents:
-
         # Create eval characters in the format Renard expect
         characters = []
         speaker_to_character = {}
@@ -118,6 +117,10 @@ def main(
         ]
     )
     FN = sum([1 for pred in preds if pred is None])
+
+    _run.log_scalar("true positives", TP)
+    _run.log_scalar("false positives", FP)
+    _run.log_scalar("false negatives", FN)
 
     precision = TP / (TP + FP)
     recall = TP / (TP + FN)
